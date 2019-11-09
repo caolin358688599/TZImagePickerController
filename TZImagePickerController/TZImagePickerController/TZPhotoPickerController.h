@@ -14,6 +14,10 @@
 @property (nonatomic, assign) BOOL isFirstAppear;
 @property (nonatomic, assign) NSInteger columnNumber;
 @property (nonatomic, strong) TZAlbumModel *model;
+// 视频和图片列表分开显示, 如果是YES
+@property (nonatomic, assign) BOOL isListImageVideo;
+// 是否默认选择图片
+@property (nonatomic, assign) BOOL  isPhoto;
 
 /// 整个项目主题色
 @property (nonatomic, strong) UIColor *mainColor;

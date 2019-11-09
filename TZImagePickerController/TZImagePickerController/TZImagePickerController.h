@@ -53,6 +53,9 @@
 - (instancetype)initWithMaxImagesCount:(NSInteger)maxImagesCount columnNumber:(NSInteger)columnNumber delegate:(id<TZImagePickerControllerDelegate>)delegate mainColor:(UIColor *)mainColor;
 /// TS_外部可以改变主题色，设置列数，是否直接进入照片列表初始化方法
 - (instancetype)initWithMaxImagesCount:(NSInteger)maxImagesCount columnNumber:(NSInteger)columnNumber delegate:(id<TZImagePickerControllerDelegate>)delegate pushPhotoPickerVc:(BOOL)pushPhotoPickerVc mainColor:(UIColor *)mainColor;
+// 斑马圈初始化图片列表和视频列表
+/// type == 默认 == 1,表示选择图片 type == 2 默认选择视频
+- (instancetype)initWithMaxImagesCount:(NSInteger)maxImagesCount columnNumber:(NSInteger)columnNumber delegate:(id<TZImagePickerControllerDelegate>)delegate pushPhotoPickerVc:(BOOL)pushPhotoPickerVc mainColor:(UIColor *)mainColor listImageVideo:(BOOL)listImageVideo type:(NSInteger)type;
 // MARK: - end
 
 /// This init method just for previewing photos / 用这个初始化方法以预览图片
