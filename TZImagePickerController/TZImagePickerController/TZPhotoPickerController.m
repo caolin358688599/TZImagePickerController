@@ -196,7 +196,28 @@ static CGFloat itemMargin = 5;
     }
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
         if (!tzImagePickerVc.sortAscendingByModificationDate && self->_isFirstAppear && self->_model.isCameraRoll) {
-
+             __weak typeof(self) weakSelf = self;
+            if (weakSelf.isListImageVideo ) {
+                [[TZImageManager manager] getCameraRollAlbum:NO allowPickingImage:tzImagePickerVc.allowPickingImage needFetchAssets:YES completion:^(TZAlbumModel *model) {
+                    self->_model = model;
+                    self->_models = [NSMutableArray arrayWithArray:self->_model.models];
+                    weakSelf.photoArray = self->_models;
+                    if (weakSelf.isPhoto) {
+                       [weakSelf initSubviews];
+                    }
+                }];
+                [[TZImageManager manager] getCameraRollAlbum:YES allowPickingImage:NO needFetchAssets:YES completion:^(TZAlbumModel *model) {
+                    self->_model = model;
+                    self->_models = [NSMutableArray arrayWithArray:self->_model.models];
+                    weakSelf.videoArray = self->_models;
+                    self->_models = self.photoArray;
+                    if (weakSelf.isPhoto == NO) {
+                        [self selectedSegmentIndex];
+                        [weakSelf initSubviews];
+                    }
+                }];
+                return;
+            }
             [[TZImageManager manager] getCameraRollAlbum:tzImagePickerVc.allowPickingVideo allowPickingImage:tzImagePickerVc.allowPickingImage needFetchAssets:YES completion:^(TZAlbumModel *model) {
                 self->_model = model;
                 self->_models = [NSMutableArray arrayWithArray:self->_model.models];
