@@ -21,6 +21,45 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 #import "TZImageRequestOperation.h"
 
+    
+
+@interface UISegmentedControl (Common)
+- (void)ensureiOS12Style;
+@end
+@implementation UISegmentedControl (Common)
+- (void)ensureiOS12Style {
+    // UISegmentedControl has changed in iOS 13 and setting the tint
+    // color now has no effect.
+    if (@available(iOS 13, *)) {
+        UIColor *tintColor = [self tintColor];
+        UIImage *tintColorImage = [self imageWithColor:tintColor];
+        [self setBackgroundImage:[self imageWithColor:self.backgroundColor ? self.backgroundColor : [UIColor clearColor]] forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
+        [self setBackgroundImage:tintColorImage forState:UIControlStateSelected barMetrics:UIBarMetricsDefault];
+        [self setBackgroundImage:[self imageWithColor:[tintColor colorWithAlphaComponent:0.2]] forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
+        [self setBackgroundImage:tintColorImage forState:UIControlStateSelected|UIControlStateSelected barMetrics:UIBarMetricsDefault];
+        
+        [self setTitleTextAttributes:@{NSForegroundColorAttributeName: tintColor, NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Medium" size:15]} forState:UIControlStateNormal];
+          [self setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor whiteColor]} forState:UIControlStateSelected];
+        //NSForegroundColorAttributeName: [UIColor whiteColor]
+        
+        [self setDividerImage:tintColorImage forLeftSegmentState:UIControlStateNormal rightSegmentState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
+        self.layer.borderWidth = 1;
+        self.layer.borderColor = [tintColor CGColor];
+        self.selectedSegmentTintColor = tintColor;
+    }
+}
+
+- (UIImage *)imageWithColor: (UIColor *)color {
+    CGRect rect = CGRectMake(0.0f, 0.0f, 1.0f, 1.0f);
+    UIGraphicsBeginImageContext(rect.size);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSetFillColorWithColor(context, [color CGColor]);
+    CGContextFillRect(context, rect);
+    UIImage *theImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return theImage;
+}
+@end
 
 
 @interface TZPhotoPickerController ()<UICollectionViewDataSource,UICollectionViewDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate,UIAlertViewDelegate,LZImageCroppingDelegate, UIScrollViewDelegate> {
@@ -96,6 +135,17 @@ static CGFloat itemMargin = 5;
     return _imagePickerVc;
 }
 
+- (UIImage *)imageWithColor:(UIColor *)color {
+    CGRect rect = CGRectMake(0.0f, 0.0f, 1.0f, 1.0f);
+    UIGraphicsBeginImageContext(rect.size);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSetFillColorWithColor(context, [color CGColor]);
+    CGContextFillRect(context, rect);
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return image;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.isFirstAppear = YES;
@@ -113,13 +163,37 @@ static CGFloat itemMargin = 5;
     if (self.isListImageVideo) {
         UISegmentedControl *control = [[UISegmentedControl alloc] initWithItems:@[@"图片", @"视频"]];
         control.frame = CGRectMake(0, 0, 110, 28);
-        control.tintColor = [UIColor colorWithRed:254 / 255.0 green:115 / 255.0 blue:138 / 255.0 alpha:1];
+        control.tintColor = [UIColor colorWithRed:254.0 / 255.0 green:115.0 / 255.0 blue:138.0 / 255.0 alpha:1];
         control.selectedSegmentIndex = 0;
-        NSDictionary *normalDic = @{NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Medium" size:15],NSForegroundColorAttributeName:   [UIColor colorWithRed:254 / 255.0 green:115 / 255.0 blue:138 / 255.0 alpha:1]};
+        [control ensureiOS12Style];
+        NSDictionary *normalDic = @{NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Medium" size:15],NSForegroundColorAttributeName:   [UIColor colorWithRed:254.0 / 255.0 green:115 / 255.0 blue:138.0 / 255.0 alpha:1]};
         NSDictionary *seletedDic = @{NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Medium" size:15],NSForegroundColorAttributeName: UIColor.whiteColor};
-        [control addTarget:self action:@selector(selectedSegmentIndex) forControlEvents:UIControlEventValueChanged];
         [control setTitleTextAttributes:normalDic forState:normal];
         [control setTitleTextAttributes:seletedDic forState:bold];
+        [control addTarget:self action:@selector(selectedSegmentIndex) forControlEvents:UIControlEventValueChanged];
+
+//        if  (@available(iOS 13.0, *)) {
+//            UIImage *tintColorImage = [self imageWithColor:control.tintColor];
+//            UIImage *dividerColorImage = [self imageWithColor:[UIColor whiteColor]];
+//            [control setBackgroundImage:tintColorImage forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
+//            [control setBackgroundImage:dividerColorImage forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
+//            control.apportionsSegmentWidthsByContent = YES;
+//
+////            [self setBackgroundImage:[self imageWithColor:self.backgroundColor ? self.backgroundColor : [UIColor clearColor]] forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
+////                  [self setBackgroundImage:tintColorImage forState:UIControlStateSelected barMetrics:UIBarMetricsDefault];
+////                  [self setBackgroundImage:[self imageWithColor:[tintColor colorWithAlphaComponent:0.2]] forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
+////                  [self setBackgroundImage:tintColorImage forState:UIControlStateSelected|UIControlStateSelected barMetrics:UIBarMetricsDefault];
+//                  [control setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor whiteColor], NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Medium" size:15],NSForegroundColorAttributeName: [UIColor whiteColor]} forState:UIControlStateNormal];
+//                   [control setTitleTextAttributes:@{NSForegroundColorAttributeName: control.tintColor, NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Medium" size:15],NSForegroundColorAttributeName:   [UIColor colorWithRed:254.0 / 255.0 green:115 / 255.0 blue:138.0 / 255.0 alpha:1]} forState:UIControlStateSelected];
+//                  [control setDividerImage:tintColorImage forLeftSegmentState:UIControlStateNormal rightSegmentState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
+//                  control.layer.borderWidth = 6;
+//                  control.layer.borderColor = [control.tintColor CGColor];
+//
+//
+////            [control setBackgroundImage(UIImage(color: .white), for: .normal, barMetrics: .default) ];
+//
+////            UIColor *tintColorImage = UIImage(0)
+//        }
         self.navigationItem.titleView = control;
         self.segment = control;
         if (!self.isPhoto)  {
@@ -127,6 +201,8 @@ static CGFloat itemMargin = 5;
         }
 
     }
+    
+    
 
 
     UIButton *rightButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -163,28 +239,31 @@ static CGFloat itemMargin = 5;
 
 
 - (void)selectedSegmentIndex {
-    int index = self.segment.selectedSegmentIndex;
-    if (index == 0) {
-        self->_models = self.photoArray;
-        if (self.piccurrentIndexPath) {
-            [self.collectionView scrollToItemAtIndexPath:self.piccurrentIndexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSInteger index = self.segment.selectedSegmentIndex;
+        if (index == 0) {
+            self->_models = self.photoArray;
+            if (self.piccurrentIndexPath) {
+                [self.collectionView scrollToItemAtIndexPath:self.piccurrentIndexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
+            }
+            self->_bottomToolBar.hidden = YES;
+            CGRect rect = self.collectionView.frame;
+            rect.size.height += 50;
+            self.collectionView.frame = rect;
+            [self.collectionView reloadData];
+        } else {
+            self->_bottomToolBar.hidden = NO;
+            CGRect rect = self.collectionView.frame;
+            rect.size.height -= 50;
+            self.collectionView.frame = rect;
+            self->_models = self.videoArray;
+            if (self.videoIndexPath) {
+                [self.collectionView scrollToItemAtIndexPath:self.videoIndexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
+            }
+            [self.collectionView reloadData];
         }
-        self->_bottomToolBar.hidden = YES;
-        CGRect rect = self.collectionView.frame;
-        rect.size.height += 50;
-        self.collectionView.frame = rect;
-        [self.collectionView reloadData];
-    } else {
-        self->_bottomToolBar.hidden = NO;
-        CGRect rect = self.collectionView.frame;
-        rect.size.height -= 50;
-        self.collectionView.frame = rect;
-        self->_models = self.videoArray;
-        if (self.videoIndexPath) {
-            [self.collectionView scrollToItemAtIndexPath:self.videoIndexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
-        }
-        [self.collectionView reloadData];
-    }
+    });
+
 }
 
 
@@ -1445,3 +1524,4 @@ static CGFloat itemMargin = 5;
 }
 
 @end
+
