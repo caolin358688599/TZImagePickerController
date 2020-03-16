@@ -246,7 +246,7 @@ static CGFloat itemMargin = 5;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         NSInteger index = self.segment.selectedSegmentIndex;
         if (index == 0) {
-            self.type = 0
+            self.type = 0;
             self->_models = self.photoArray;
             if (self.piccurrentIndexPath) {
                 [self.collectionView scrollToItemAtIndexPath:self.piccurrentIndexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
@@ -735,9 +735,9 @@ static CGFloat itemMargin = 5;
         TZAssetCameraCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"TZAssetCameraCell" forIndexPath:indexPath];
         if (self.isListImageVideo) {
             if (self.type == 1) {
-                cell.imageView.image = tzImagePickerVc.takeVideo
+                cell.imageView.image = tzImagePickerVc.takeVideo;
             } else {
-                cell.imageView.image = tzImagePickerVc.takePictureImage
+                cell.imageView.image = tzImagePickerVc.takePictureImage;
             }
         } else {
             if (tzImagePickerVc.takeVideo) {
