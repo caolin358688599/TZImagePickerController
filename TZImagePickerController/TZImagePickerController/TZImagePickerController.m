@@ -15,6 +15,7 @@
 #import "UIView+Layout.h"
 #import "TZImageManager.h"
 #import <sys/utsname.h>
+#import "BanmaListViewController.h"
 
 @interface TZImagePickerController () {
     NSTimer *_timer;
@@ -742,6 +743,11 @@
 
 - (void)pushPhotoPickerVc:(BOOL)listImageVideo type: (NSInteger)type {
     _didPushPhotoPickerVc = NO;
+//    if (listImageVideo) {
+//        BanmaListViewController *listVC = BanmaListViewController()
+//
+//
+//    }
     // 1.6.8 判断是否需要push到照片选择页，如果_pushPhotoPickerVc为NO,则不push
     if (!_didPushPhotoPickerVc && _pushPhotoPickerVc) {
         TZPhotoPickerController *photoPickerVc = [[TZPhotoPickerController alloc] init];

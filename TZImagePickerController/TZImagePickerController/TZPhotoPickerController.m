@@ -171,29 +171,6 @@ static CGFloat itemMargin = 5;
         [control setTitleTextAttributes:normalDic forState:normal];
         [control setTitleTextAttributes:seletedDic forState:bold];
         [control addTarget:self action:@selector(selectedSegmentIndex) forControlEvents:UIControlEventValueChanged];
-
-//        if  (@available(iOS 13.0, *)) {
-//            UIImage *tintColorImage = [self imageWithColor:control.tintColor];
-//            UIImage *dividerColorImage = [self imageWithColor:[UIColor whiteColor]];
-//            [control setBackgroundImage:tintColorImage forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-//            [control setBackgroundImage:dividerColorImage forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
-//            control.apportionsSegmentWidthsByContent = YES;
-//
-////            [self setBackgroundImage:[self imageWithColor:self.backgroundColor ? self.backgroundColor : [UIColor clearColor]] forState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-////                  [self setBackgroundImage:tintColorImage forState:UIControlStateSelected barMetrics:UIBarMetricsDefault];
-////                  [self setBackgroundImage:[self imageWithColor:[tintColor colorWithAlphaComponent:0.2]] forState:UIControlStateHighlighted barMetrics:UIBarMetricsDefault];
-////                  [self setBackgroundImage:tintColorImage forState:UIControlStateSelected|UIControlStateSelected barMetrics:UIBarMetricsDefault];
-//                  [control setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor whiteColor], NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Medium" size:15],NSForegroundColorAttributeName: [UIColor whiteColor]} forState:UIControlStateNormal];
-//                   [control setTitleTextAttributes:@{NSForegroundColorAttributeName: control.tintColor, NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Medium" size:15],NSForegroundColorAttributeName:   [UIColor colorWithRed:254.0 / 255.0 green:115 / 255.0 blue:138.0 / 255.0 alpha:1]} forState:UIControlStateSelected];
-//                  [control setDividerImage:tintColorImage forLeftSegmentState:UIControlStateNormal rightSegmentState:UIControlStateNormal barMetrics:UIBarMetricsDefault];
-//                  control.layer.borderWidth = 6;
-//                  control.layer.borderColor = [control.tintColor CGColor];
-//
-//
-////            [control setBackgroundImage(UIImage(color: .white), for: .normal, barMetrics: .default) ];
-//
-////            UIColor *tintColorImage = UIImage(0)
-//        }
         self.navigationItem.titleView = control;
         self.segment = control;
         if (!self.isPhoto)  {
@@ -220,10 +197,31 @@ static CGFloat itemMargin = 5;
         [[UINavigationBar appearance] setBackIndicatorImage:tzImagePickerVc.backImage];
         [[UINavigationBar appearance] setBackIndicatorTransitionMaskImage:tzImagePickerVc.backImage];
     }
+    
+    if (self.isListImageVideo) {
+        UIButton *leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        leftButton.frame = CGRectMake(0, 0, 44, 44);
+       // leftButton.titleLabel.font = [UIFont systemFontOfSize:16];
+        [leftButton setImage:tzImagePickerVc.backImage forState:UIControlStateNormal];
+//        [leftButton setTitle:@"返回" forState:UIControlStateNormal];
+        [leftButton setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
+        [leftButton addTarget:self action:@selector(leftButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:leftButton];
+    }
+    
+
+
+    // [leftButton setTitle:tzImagePickerVc.cancelBtnTitleStr forState:UIControlStateNormal];
+//     if (_mainColor) {
+//         [rightButton setTitleColor:_mainColor forState:UIControlStateNormal];
+//     } else {
+//         [rightButton setTitleColor:[UIColor colorWithRed:89/255.0 green:182/255.0 blue:215/255.0 alpha:1] forState:UIControlStateNormal];
+//     }
+    
  
-    UIBarButtonItem *backBtnItem = [[UIBarButtonItem alloc] init];
-    backBtnItem.title = @"";
-    self.navigationItem.backBarButtonItem = backBtnItem;
+//    UIBarButtonItem *backBtnItem = [[UIBarButtonItem alloc] init];
+//    backBtnItem.title = @"";
+//    self.navigationItem.backBarButtonItem = backBtnItem;
     _showTakePhotoBtn = (_model.isCameraRoll && tzImagePickerVc.allowTakePicture);
     /// 通过调整返回按钮X轴偏移量,把title移到屏幕外,实现隐藏返回按钮标题的效果
     [[UIBarButtonItem appearance] setBackButtonTitlePositionAdjustment:UIOffsetMake(-100, 0)
@@ -236,6 +234,11 @@ static CGFloat itemMargin = 5;
     self.operationQueue.maxConcurrentOperationCount = 3;
 }
 
+- (void)leftButtonAction {
+    [self dismissViewControllerAnimated:true completion:nil];
+//    [self.navigationController popToRootViewControllerAnimated:true];
+//    [self dismissViewControllerAnimated:true completion:nil];
+}
 
 
 - (void)selectedSegmentIndex {
@@ -352,7 +355,6 @@ static CGFloat itemMargin = 5;
         [self configCollectionView];
         self->_collectionView.hidden = YES;
         [self configBottomToolBar];
-        
         [self scrollCollectionViewToBottom];
     });
 }

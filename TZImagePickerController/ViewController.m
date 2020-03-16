@@ -21,6 +21,7 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 #import "FLAnimatedImage.h"
 #import "TZImageUploadOperation.h"
+#import "BanmaListViewController.h"
 
 @interface ViewController ()<TZImagePickerControllerDelegate,UICollectionViewDataSource,UICollectionViewDelegate,UIImagePickerControllerDelegate,UIAlertViewDelegate,UINavigationControllerDelegate> {
     NSMutableArray *_selectedPhotos;
@@ -387,10 +388,17 @@
 //    }];
 //
 //    [self presentViewController:imagePickerVc animated:YES completion:nil];
-    TZImagePickerController *vc = [[TZImagePickerController alloc] initWithMaxImagesCount:9 columnNumber:4 delegate:self pushPhotoPickerVc:YES mainColor:[UIColor redColor] listImageVideo:YES type:2];
+    TZImagePickerController *vc = [[TZImagePickerController alloc] initWithMaxImagesCount:9 columnNumber:4 delegate:self pushPhotoPickerVc:true mainColor:[UIColor redColor] listImageVideo:YES type:1];
     vc.modalPresentationStyle = UIModalPresentationFullScreen;
     [self presentViewController:vc animated:YES completion:nil];
-
+    
+    
+//    BanmaListViewController *listVC = [[BanmaListViewController alloc] init];
+//
+//    TZImagePickerController *vc = [[TZImagePickerController alloc] initWithRootViewController:listVC];
+//    vc.modalPresentationStyle  = UIModalPresentationFullScreen;
+//     [self presentViewController:vc animated:YES completion:nil];
+    
     
 }
 
