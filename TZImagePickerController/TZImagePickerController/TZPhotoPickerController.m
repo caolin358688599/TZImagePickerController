@@ -89,6 +89,7 @@
 @property (nonatomic, strong) NSOperationQueue *operationQueue;
 @property (nonatomic, strong) NSIndexPath *piccurrentIndexPath;
 @property (nonatomic, strong) NSIndexPath *videoIndexPath;
+@property (nonatomic, assign) NSInteger type;
 @end
 
 static CGSize AssetGridThumbnailSize;
@@ -245,6 +246,7 @@ static CGFloat itemMargin = 5;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         NSInteger index = self.segment.selectedSegmentIndex;
         if (index == 0) {
+            self.type = 0
             self->_models = self.photoArray;
             if (self.piccurrentIndexPath) {
                 [self.collectionView scrollToItemAtIndexPath:self.piccurrentIndexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
@@ -256,6 +258,7 @@ static CGFloat itemMargin = 5;
             [self.collectionView reloadData];
         } else {
             self->_bottomToolBar.hidden = NO;
+            self.type = 1;
             CGRect rect = self.collectionView.frame;
             rect.size.height -= 50;
             self.collectionView.frame = rect;
@@ -730,11 +733,20 @@ static CGFloat itemMargin = 5;
     TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
     if (((tzImagePickerVc.sortAscendingByModificationDate && indexPath.item >= _models.count) || (!tzImagePickerVc.sortAscendingByModificationDate && indexPath.item == 0)) && _showTakePhotoBtn) {
         TZAssetCameraCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"TZAssetCameraCell" forIndexPath:indexPath];
-        if (tzImagePickerVc.takeVideo) {
-            cell.imageView.image = tzImagePickerVc.takeVideo;
+        if (self.isListImageVideo) {
+            if (self.type == 1) {
+                cell.imageView.image = tzImagePickerVc.takeVideo
+            } else {
+                cell.imageView.image = tzImagePickerVc.takePictureImage
+            }
         } else {
-            cell.imageView.image = [UIImage tz_imageNamedFromMyBundle:tzImagePickerVc.takePictureImageName];
+            if (tzImagePickerVc.takeVideo) {
+                cell.imageView.image = tzImagePickerVc.takeVideo;
+            } else {
+                cell.imageView.image = [UIImage tz_imageNamedFromMyBundle:tzImagePickerVc.takePictureImageName];
+            }
         }
+      
         cell.imageView.backgroundColor = tzImagePickerVc.oKButtonBackGroundColorDisabled;
         return cell;
     }
