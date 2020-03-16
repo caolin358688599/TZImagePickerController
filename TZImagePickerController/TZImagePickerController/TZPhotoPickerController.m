@@ -247,7 +247,6 @@ static CGFloat itemMargin = 5;
         NSInteger index = self.segment.selectedSegmentIndex;
         if (index == 0) {
             self.type = 0;
-            _showTakePhotoBtn = NO;
             self->_models = self.photoArray;
             if (self.piccurrentIndexPath) {
                 [self.collectionView scrollToItemAtIndexPath:self.piccurrentIndexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
@@ -260,7 +259,7 @@ static CGFloat itemMargin = 5;
         } else {
             self->_bottomToolBar.hidden = NO;
             self.type = 1;
-            _showTakePhotoBtn = YES;
+           
             CGRect rect = self.collectionView.frame;
             rect.size.height -= 50;
             self.collectionView.frame = rect;
@@ -844,7 +843,12 @@ static CGFloat itemMargin = 5;
             [self.navigationController dismissViewControllerAnimated:NO completion:^{
                 [tzImagePickerVc.pickerDelegate imagePickerControllerDidClickTakePhotoBtn:tzImagePickerVc];
             }];
-        } else {
+        } else if (self.type == 1 && indexPath.row == 0) {
+            [self.navigationController dismissViewControllerAnimated:NO completion:^{
+                [tzImagePickerVc.pickerDelegate imagePickerControllerDidClickTakePhotoBtn:tzImagePickerVc];
+            }];
+        }
+        else {
             [self takePhoto];
         }
         return;
