@@ -847,259 +847,258 @@ static CGFloat itemMargin = 5;
                 } else {
                     [self takePhoto];
                 }
-                NSInteger index = indexPath.item;
-                      if (!tzImagePickerVc.sortAscendingByModificationDate && _showTakePhotoBtn) {
-                          index = indexPath.item - 1;
-                      }
-                      TZAssetModel *model = _models[index];
-                      if (model.type == TZAssetModelMediaTypeVideo && !tzImagePickerVc.allowPickingMultipleVideo) {
-                          if (tzImagePickerVc.selectedModels.count > 0) {
-                              TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
-                              [imagePickerVc showAlertWithTitle:[NSBundle tz_localizedStringForKey:@"Can not choose both video and photo"]];
-                          } else {
-                              // 先判断试是否是低于5min的视频, 同时没有开启直接编辑属性
-                              // 小于等于5min弹窗提示支持快速上传，以及编辑后上传
-                              // 大于5min，直接进入编辑页面
-
-                              NSArray *timeArr = [model.timeLength componentsSeparatedByString:@":"];
-                              if (timeArr.count == 2 && (([timeArr[1] integerValue] == 0 && [timeArr[0] integerValue] <= 5) || ([timeArr[1] integerValue] > 0 && [timeArr[0] integerValue] <= 4)) && tzImagePickerVc.directEditVideo == false) {
-                                  UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"" message:@"温馨提示" preferredStyle:UIAlertControllerStyleActionSheet];
-                                  UIAlertAction *uploadAction = [UIAlertAction actionWithTitle:@"快速上传(支持5分钟以内)" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                                      NSLog(@"uploadAction");
-                                      [tzImagePickerVc showProgressHUD];
-                                      // 禁止用户操作
-                                      tzImagePickerVc.view.userInteractionEnabled = NO;
-
-                                      [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:nil resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
-                                          if ([asset isKindOfClass:[AVURLAsset class]]) {
-                                              AVURLAsset *urlAsset = (AVURLAsset*)asset;
-                                              NSNumber *size;
-                                              [urlAsset.URL getResourceValue:&size forKey:NSURLFileSizeKey error:nil];
-                                              /// 默认25mb以下导出最高画质,25以上导出720p中等画质的视频
-                                              // 默认导出720p中等画质的视频
-                                              NSString * exportPresetQulity;
-                                              if (size.longLongValue / (1024.0 * 1024.4) > 25) {
-                                                  exportPresetQulity = AVAssetExportPreset960x540;
-                                              } else {
-                                                  exportPresetQulity = AVAssetExportPresetMediumQuality;
-                                              }
-                                              [[TZImageManager alloc] getVideoOutputPathWithAsset:model.asset presetName:exportPresetQulity version:PHVideoRequestOptionsVersionOriginal success:^(NSString *outputPath) {
-                                                  NSString *exportFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@",@"exportVideo",@"mp4"]];
-                                                  if ([[NSFileManager defaultManager] fileExistsAtPath:exportFilePath]) {
-                                                      // 移除上一个
-                                                      NSError *removeErr;
-                                                      [[NSFileManager defaultManager] removeItemAtPath:exportFilePath error: &removeErr];
-                                                  }
-                                                  // 把文件移动到同一的路径下，修改为同一的名称。方便后续的操作
-                                                  NSError *moveErr;
-                                                  [[NSFileManager defaultManager] moveItemAtURL:[NSURL fileURLWithPath:outputPath] toURL:[NSURL fileURLWithPath:exportFilePath] error:&moveErr];
-                                                  // 获取封面图
-                                                  PHVideoRequestOptions* options = [[PHVideoRequestOptions alloc] init];
-                                                  options.version = PHVideoRequestOptionsVersionOriginal;
-                                                  options.deliveryMode = PHVideoRequestOptionsDeliveryModeAutomatic;
-                                                  options.networkAccessAllowed = YES;
-                                                  [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
-                                                      __weak typeof(self) weakSelf = self;
-                                                      AVAssetImageGenerator *generator = [[AVAssetImageGenerator alloc] initWithAsset:asset];
-                                                      generator.appliesPreferredTrackTransform = YES;
-                                                      generator.requestedTimeToleranceBefore = kCMTimeZero;
-                                                      generator.requestedTimeToleranceAfter = kCMTimeZero;
-                                                      generator.apertureMode = AVAssetImageGeneratorApertureModeProductionAperture;
-                                                      NSError *error = nil;
-                                                      UIImage *coverImage;
-                                                      
-                                                      CGFloat second = 0;
-                                                      for (int i = 0; i < 5; i ++) {
-                                                          CGImageRef img = [generator copyCGImageAtTime:CMTimeMake(second * asset.duration.timescale, asset.duration.timescale) actualTime:NULL error:&error];
-                                                          second = second + 0.2;
-                                                          if (img != nil) {
-                                                              coverImage = [UIImage imageWithCGImage:img];
-                                                              break;
-                                                          }
-                                                          NSLog(@"error\n\n -%@", error);
-                                                      }
-                                                      // 允许用户操作
-                                                      tzImagePickerVc.view.userInteractionEnabled = YES;
-                                                      [tzImagePickerVc hideProgressHUD];
-                                                      if (coverImage != nil && exportFilePath != nil) {
-                                                          /// 切换到主线程
-                                                          dispatch_sync(dispatch_get_main_queue(), ^{
-                                                              [tzImagePickerVc dismissViewControllerAnimated:YES completion:^{
-                                                                  if ([tzImagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerController:didFinishEditVideoCoverImage:videoURL:)]) {
-                                                                      [tzImagePickerVc.pickerDelegate imagePickerController:tzImagePickerVc didFinishEditVideoCoverImage:coverImage videoURL:[NSURL fileURLWithPath:exportFilePath]];
-                                                                  }
-                                                              }];
-                                                          });
-                                                      } else {
-                                                          // 允许用户操作
-                                                          tzImagePickerVc.view.userInteractionEnabled = YES;
-                                                          [tzImagePickerVc showAlertWithTitle:@"封面获取出问题啦，请手动编辑"];
-                                                      }
-                                                  }];
-                                              } failure:^(NSString *errorMessage, NSError *error) {
-                                                  // 允许用户操作
-                                                  tzImagePickerVc.view.userInteractionEnabled = YES;
-                                                  [tzImagePickerVc showAlertWithTitle:@"自动导出出问题啦，请手动编辑"];
-                                              }];
-                                          } else {
-                                              // 允许用户操作
-                                              tzImagePickerVc.view.userInteractionEnabled = YES;
-                                              [tzImagePickerVc showAlertWithTitle:@"封面获取出问题啦，请手动编辑"];
-                                          }
-                                      }];
-                                  }];
-                                  UIAlertAction *editAction = [UIAlertAction actionWithTitle:@"编辑后上传" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                                      NSLog(@"editAction");
-                                      TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
-                                      ZLEditVideoController *editVC = [[ZLEditVideoController alloc]init];
-                                      if (imagePickerVc.videoEditVCbackImage) {
-                                          editVC.backImage = imagePickerVc.videoEditVCbackImage;
-                                      }
-                                      if (imagePickerVc.mainColor) {
-                                          editVC.mainColor = imagePickerVc.mainColor;
-                                      }
-                                      if (imagePickerVc.maxEditVideoTime > 0) {
-                                          editVC.maxEditVideoTime = imagePickerVc.maxEditVideoTime;
-                                      }
-                                      if (imagePickerVc.minEditVideoTime > 0) {
-                                          editVC.minEditVideoTime = imagePickerVc.minEditVideoTime;
-                                      }
-                                      editVC.asset = model.asset;
-                                      __weak typeof(self) weakSelf = self;
-                                      editVC.coverImageBlock = ^(UIImage *coverImage, NSURL *videoPath) {
-                                          [imagePickerVc dismissViewControllerAnimated:YES completion:^{
-                                              if (coverImage != nil && videoPath != nil) {
-                                                  if ([imagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerController:didFinishEditVideoCoverImage:videoURL:)]) {
-                                                      [imagePickerVc.pickerDelegate imagePickerController:imagePickerVc didFinishEditVideoCoverImage:coverImage videoURL:videoPath];
-                                                  }
-                                                  /// 导航内视图全部pop以释放内存
-                                                  for (int i = 0; i < weakSelf.navigationController.viewControllers.count; i ++) {
-                                                      [weakSelf.navigationController popViewControllerAnimated:YES];
-                                                  }
-                                              }
-                                          }];
-                                      };
-                                      [self.navigationController pushViewController:editVC animated:YES];
-                                  }];
-                                  UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-                                      NSLog(@"cancel");
-                                  }];
-                                  [alertController addAction:uploadAction];
-                                  [alertController addAction:editAction];
-                                  [alertController addAction:cancelAction];
-                                  [self presentViewController:alertController animated:YES completion:nil];
-                              } else {
-                                  TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
-                                  ZLEditVideoController *editVC = [[ZLEditVideoController alloc]init];
-                                  if (imagePickerVc.videoEditVCbackImage) {
-                                      editVC.backImage = imagePickerVc.videoEditVCbackImage;
-                                  }
-                                  if (imagePickerVc.mainColor) {
-                                      editVC.mainColor = imagePickerVc.mainColor;
-                                  }
-                                  if (imagePickerVc.maxEditVideoTime > 0) {
-                                      editVC.maxEditVideoTime = imagePickerVc.maxEditVideoTime;
-                                  }
-                                  if (imagePickerVc.minEditVideoTime > 0) {
-                                      editVC.minEditVideoTime = imagePickerVc.minEditVideoTime;
-                                  }
-                                  editVC.asset = model.asset;
-                                  __weak typeof(self) weakSelf = self;
-                                  editVC.coverImageBlock = ^(UIImage *coverImage, NSURL *videoPath) {
-                                      [imagePickerVc dismissViewControllerAnimated:YES completion:^{
-                                          if (coverImage != nil && videoPath != nil) {
-                                              if ([imagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerController:didFinishEditVideoCoverImage:videoURL:)]) {
-                                                  [imagePickerVc.pickerDelegate imagePickerController:imagePickerVc didFinishEditVideoCoverImage:coverImage videoURL:videoPath];
-                                              }
-                                              /// 导航内视图全部pop以释放内存
-                                              for (int i = 0; i < weakSelf.navigationController.viewControllers.count; i ++) {
-                                                  [weakSelf.navigationController popViewControllerAnimated:YES];
-                                              }
-                                          }
-                                      }];
-                                  };
-                                  [self.navigationController pushViewController:editVC animated:YES];
-                              }
-                              return;
-                              // TODO: 后续如果需要修改代码和旧代码共存,增进一个协议函数返回Bool值决定是否调整即可
-                              [[TZImageManager manager] getPhotoWithAsset:model.asset completion:^(UIImage *photo, NSDictionary *info, BOOL isDegraded) {
-                                  if (!isDegraded && photo) {
-                                      TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
-                                      if (self.navigationController) {
-                                          [self.navigationController dismissViewControllerAnimated:NO completion:^{
-                                              if ([imagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerController:didFinishPickingVideo:sourceAssets:)]) {
-                                                  [imagePickerVc.pickerDelegate imagePickerController:imagePickerVc didFinishPickingVideo:photo sourceAssets:model.asset];
-                                              }
-                                              if (imagePickerVc.didFinishPickingVideoHandle) {
-                                                  imagePickerVc.didFinishPickingVideoHandle(photo,model.asset);
-                                              }
-                                          }];
-                                      }
-                                  }
-                              }];
-                          }
-                      } else if (model.type == TZAssetModelMediaTypePhotoGif && tzImagePickerVc.allowPickingGif && !tzImagePickerVc.allowPickingMultipleVideo) {
-                          if (tzImagePickerVc.selectedModels.count > 0) {
-                              TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
-                              [imagePickerVc showAlertWithTitle:[NSBundle tz_localizedStringForKey:@"Can not choose both photo and GIF"]];
-                          } else {
-                              TZGifPhotoPreviewController *gifPreviewVc = [[TZGifPhotoPreviewController alloc] init];
-                              gifPreviewVc.model = model;
-                              UIBarButtonItem *backBtnItem = [[UIBarButtonItem alloc] init];
-                              backBtnItem.title = @" ";
-                              self.navigationItem.backBarButtonItem = backBtnItem;
-                              [self.navigationController pushViewController:gifPreviewVc animated:YES];
-                          }
-                      } else {
-                          TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
-                          if (imagePickerVc.shouldPick) {
-                              TZAssetModel *asset = _models[index];
-                              TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
-                              [[TZImageManager manager] getOriginalPhotoWithAsset:asset.asset completion:^(UIImage *photo, NSDictionary *info) {
-                                  LZImageCropping *imageBrowser = [[LZImageCropping alloc]init];
-                                  TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
-                                  //设置代理
-                                  imageBrowser.delegate = self;
-                                  if (tzImagePickerVc.isSquare) {
-                                      if (tzImagePickerVc.clipSize.height > 0 && tzImagePickerVc.clipSize.width > 0) {
-                                          CGFloat clipR = MIN(tzImagePickerVc.clipSize.height, tzImagePickerVc.clipSize.width);
-                                          imageBrowser.cropSize  = CGSizeMake(clipR, clipR);
-                                      } else {
-
-
-
-                                          imageBrowser.cropSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width - 80, UIScreen.mainScreen.bounds.size.width - 80);
-                                      }
-                                  } else {
-                                      if (tzImagePickerVc.clipSize.height > 0 && tzImagePickerVc.clipSize.width > 0) {
-                                          imageBrowser.cropSize  = tzImagePickerVc.clipSize;
-                                      } else {
-                                          imageBrowser.cropSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.width / 2.0);
-                                      }
-                                  }
-                                  [imageBrowser setImage:photo];
-                                  imageBrowser.titleLabel.text = tzImagePickerVc.topTitle;
-                                  imageBrowser.backImage = imagePickerVc.backImage;
-                                  //设置自定义裁剪区域大小
-                                  //是否需要圆形
-                                  imageBrowser.isRound = NO;
-                                  if (_mainColor) {
-                                      imageBrowser.mainColor = _mainColor;
-                                  }
-                                  [self.navigationController pushViewController:imageBrowser animated:YES];
-                              }];
-                          } else {
-                              TZPhotoPreviewController *photoPreviewVc = [[TZPhotoPreviewController alloc] init];
-                              photoPreviewVc.currentIndex = index;
-                              photoPreviewVc.models = _models;
-                              [self pushPhotoPrevireViewController:photoPreviewVc];
-                          }
-                      }
+            }
+            NSInteger index = indexPath.item;
+            if (!tzImagePickerVc.sortAscendingByModificationDate && _showTakePhotoBtn) {
+                index = indexPath.item - 1;
+            }
+            TZAssetModel *model = _models[index];
+            if (model.type == TZAssetModelMediaTypeVideo && !tzImagePickerVc.allowPickingMultipleVideo) {
+                if (tzImagePickerVc.selectedModels.count > 0) {
+                    TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
+                    [imagePickerVc showAlertWithTitle:[NSBundle tz_localizedStringForKey:@"Can not choose both video and photo"]];
+                } else {
+                    // 先判断试是否是低于5min的视频, 同时没有开启直接编辑属性
+                    // 小于等于5min弹窗提示支持快速上传，以及编辑后上传
+                    // 大于5min，直接进入编辑页面
                     
+                    NSArray *timeArr = [model.timeLength componentsSeparatedByString:@":"];
+                    if (timeArr.count == 2 && (([timeArr[1] integerValue] == 0 && [timeArr[0] integerValue] <= 5) || ([timeArr[1] integerValue] > 0 && [timeArr[0] integerValue] <= 4)) && tzImagePickerVc.directEditVideo == false) {
+                        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"" message:@"温馨提示" preferredStyle:UIAlertControllerStyleActionSheet];
+                        UIAlertAction *uploadAction = [UIAlertAction actionWithTitle:@"快速上传(支持5分钟以内)" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                            NSLog(@"uploadAction");
+                            [tzImagePickerVc showProgressHUD];
+                            // 禁止用户操作
+                            tzImagePickerVc.view.userInteractionEnabled = NO;
+                            
+                            [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:nil resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
+                                if ([asset isKindOfClass:[AVURLAsset class]]) {
+                                    AVURLAsset *urlAsset = (AVURLAsset*)asset;
+                                    NSNumber *size;
+                                    [urlAsset.URL getResourceValue:&size forKey:NSURLFileSizeKey error:nil];
+                                    /// 默认25mb以下导出最高画质,25以上导出720p中等画质的视频
+                                    // 默认导出720p中等画质的视频
+                                    NSString * exportPresetQulity;
+                                    if (size.longLongValue / (1024.0 * 1024.4) > 25) {
+                                        exportPresetQulity = AVAssetExportPreset960x540;
+                                    } else {
+                                        exportPresetQulity = AVAssetExportPresetMediumQuality;
+                                    }
+                                    [[TZImageManager alloc] getVideoOutputPathWithAsset:model.asset presetName:exportPresetQulity version:PHVideoRequestOptionsVersionOriginal success:^(NSString *outputPath) {
+                                        NSString *exportFilePath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@",@"exportVideo",@"mp4"]];
+                                        if ([[NSFileManager defaultManager] fileExistsAtPath:exportFilePath]) {
+                                            // 移除上一个
+                                            NSError *removeErr;
+                                            [[NSFileManager defaultManager] removeItemAtPath:exportFilePath error: &removeErr];
+                                        }
+                                        // 把文件移动到同一的路径下，修改为同一的名称。方便后续的操作
+                                        NSError *moveErr;
+                                        [[NSFileManager defaultManager] moveItemAtURL:[NSURL fileURLWithPath:outputPath] toURL:[NSURL fileURLWithPath:exportFilePath] error:&moveErr];
+                                        // 获取封面图
+                                        PHVideoRequestOptions* options = [[PHVideoRequestOptions alloc] init];
+                                        options.version = PHVideoRequestOptionsVersionOriginal;
+                                        options.deliveryMode = PHVideoRequestOptionsDeliveryModeAutomatic;
+                                        options.networkAccessAllowed = YES;
+                                        [[PHImageManager defaultManager] requestAVAssetForVideo:model.asset options:options resultHandler:^(AVAsset * _Nullable asset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
+                                            __weak typeof(self) weakSelf = self;
+                                            AVAssetImageGenerator *generator = [[AVAssetImageGenerator alloc] initWithAsset:asset];
+                                            generator.appliesPreferredTrackTransform = YES;
+                                            generator.requestedTimeToleranceBefore = kCMTimeZero;
+                                            generator.requestedTimeToleranceAfter = kCMTimeZero;
+                                            generator.apertureMode = AVAssetImageGeneratorApertureModeProductionAperture;
+                                            NSError *error = nil;
+                                            UIImage *coverImage;
+                                            
+                                            CGFloat second = 0;
+                                            for (int i = 0; i < 5; i ++) {
+                                                CGImageRef img = [generator copyCGImageAtTime:CMTimeMake(second * asset.duration.timescale, asset.duration.timescale) actualTime:NULL error:&error];
+                                                second = second + 0.2;
+                                                if (img != nil) {
+                                                    coverImage = [UIImage imageWithCGImage:img];
+                                                    break;
+                                                }
+                                                NSLog(@"error\n\n -%@", error);
+                                            }
+                                            // 允许用户操作
+                                            tzImagePickerVc.view.userInteractionEnabled = YES;
+                                            [tzImagePickerVc hideProgressHUD];
+                                            if (coverImage != nil && exportFilePath != nil) {
+                                                /// 切换到主线程
+                                                dispatch_sync(dispatch_get_main_queue(), ^{
+                                                    [tzImagePickerVc dismissViewControllerAnimated:YES completion:^{
+                                                        if ([tzImagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerController:didFinishEditVideoCoverImage:videoURL:)]) {
+                                                            [tzImagePickerVc.pickerDelegate imagePickerController:tzImagePickerVc didFinishEditVideoCoverImage:coverImage videoURL:[NSURL fileURLWithPath:exportFilePath]];
+                                                        }
+                                                    }];
+                                                });
+                                            } else {
+                                                // 允许用户操作
+                                                tzImagePickerVc.view.userInteractionEnabled = YES;
+                                                [tzImagePickerVc showAlertWithTitle:@"封面获取出问题啦，请手动编辑"];
+                                            }
+                                        }];
+                                    } failure:^(NSString *errorMessage, NSError *error) {
+                                        // 允许用户操作
+                                        tzImagePickerVc.view.userInteractionEnabled = YES;
+                                        [tzImagePickerVc showAlertWithTitle:@"自动导出出问题啦，请手动编辑"];
+                                    }];
+                                } else {
+                                    // 允许用户操作
+                                    tzImagePickerVc.view.userInteractionEnabled = YES;
+                                    [tzImagePickerVc showAlertWithTitle:@"封面获取出问题啦，请手动编辑"];
+                                }
+                            }];
+                        }];
+                        UIAlertAction *editAction = [UIAlertAction actionWithTitle:@"编辑后上传" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                            NSLog(@"editAction");
+                            TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
+                            ZLEditVideoController *editVC = [[ZLEditVideoController alloc]init];
+                            if (imagePickerVc.videoEditVCbackImage) {
+                                editVC.backImage = imagePickerVc.videoEditVCbackImage;
+                            }
+                            if (imagePickerVc.mainColor) {
+                                editVC.mainColor = imagePickerVc.mainColor;
+                            }
+                            if (imagePickerVc.maxEditVideoTime > 0) {
+                                editVC.maxEditVideoTime = imagePickerVc.maxEditVideoTime;
+                            }
+                            if (imagePickerVc.minEditVideoTime > 0) {
+                                editVC.minEditVideoTime = imagePickerVc.minEditVideoTime;
+                            }
+                            editVC.asset = model.asset;
+                            __weak typeof(self) weakSelf = self;
+                            editVC.coverImageBlock = ^(UIImage *coverImage, NSURL *videoPath) {
+                                [imagePickerVc dismissViewControllerAnimated:YES completion:^{
+                                    if (coverImage != nil && videoPath != nil) {
+                                        if ([imagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerController:didFinishEditVideoCoverImage:videoURL:)]) {
+                                            [imagePickerVc.pickerDelegate imagePickerController:imagePickerVc didFinishEditVideoCoverImage:coverImage videoURL:videoPath];
+                                        }
+                                        /// 导航内视图全部pop以释放内存
+                                        for (int i = 0; i < weakSelf.navigationController.viewControllers.count; i ++) {
+                                            [weakSelf.navigationController popViewControllerAnimated:YES];
+                                        }
+                                    }
+                                }];
+                            };
+                            [self.navigationController pushViewController:editVC animated:YES];
+                        }];
+                        UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+                            NSLog(@"cancel");
+                        }];
+                        [alertController addAction:uploadAction];
+                        [alertController addAction:editAction];
+                        [alertController addAction:cancelAction];
+                        [self presentViewController:alertController animated:YES completion:nil];
+                    } else {
+                        TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
+                        ZLEditVideoController *editVC = [[ZLEditVideoController alloc]init];
+                        if (imagePickerVc.videoEditVCbackImage) {
+                            editVC.backImage = imagePickerVc.videoEditVCbackImage;
+                        }
+                        if (imagePickerVc.mainColor) {
+                            editVC.mainColor = imagePickerVc.mainColor;
+                        }
+                        if (imagePickerVc.maxEditVideoTime > 0) {
+                            editVC.maxEditVideoTime = imagePickerVc.maxEditVideoTime;
+                        }
+                        if (imagePickerVc.minEditVideoTime > 0) {
+                            editVC.minEditVideoTime = imagePickerVc.minEditVideoTime;
+                        }
+                        editVC.asset = model.asset;
+                        __weak typeof(self) weakSelf = self;
+                        editVC.coverImageBlock = ^(UIImage *coverImage, NSURL *videoPath) {
+                            [imagePickerVc dismissViewControllerAnimated:YES completion:^{
+                                if (coverImage != nil && videoPath != nil) {
+                                    if ([imagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerController:didFinishEditVideoCoverImage:videoURL:)]) {
+                                        [imagePickerVc.pickerDelegate imagePickerController:imagePickerVc didFinishEditVideoCoverImage:coverImage videoURL:videoPath];
+                                    }
+                                    /// 导航内视图全部pop以释放内存
+                                    for (int i = 0; i < weakSelf.navigationController.viewControllers.count; i ++) {
+                                        [weakSelf.navigationController popViewControllerAnimated:YES];
+                                    }
+                                }
+                            }];
+                        };
+                        [self.navigationController pushViewController:editVC animated:YES];
+                    }
+                    return;
+                    // TODO: 后续如果需要修改代码和旧代码共存,增进一个协议函数返回Bool值决定是否调整即可
+                    [[TZImageManager manager] getPhotoWithAsset:model.asset completion:^(UIImage *photo, NSDictionary *info, BOOL isDegraded) {
+                        if (!isDegraded && photo) {
+                            TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
+                            if (self.navigationController) {
+                                [self.navigationController dismissViewControllerAnimated:NO completion:^{
+                                    if ([imagePickerVc.pickerDelegate respondsToSelector:@selector(imagePickerController:didFinishPickingVideo:sourceAssets:)]) {
+                                        [imagePickerVc.pickerDelegate imagePickerController:imagePickerVc didFinishPickingVideo:photo sourceAssets:model.asset];
+                                    }
+                                    if (imagePickerVc.didFinishPickingVideoHandle) {
+                                        imagePickerVc.didFinishPickingVideoHandle(photo,model.asset);
+                                    }
+                                }];
+                            }
+                        }
+                    }];
                 }
-                return;
+            } else if (model.type == TZAssetModelMediaTypePhotoGif && tzImagePickerVc.allowPickingGif && !tzImagePickerVc.allowPickingMultipleVideo) {
+                if (tzImagePickerVc.selectedModels.count > 0) {
+                    TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
+                    [imagePickerVc showAlertWithTitle:[NSBundle tz_localizedStringForKey:@"Can not choose both photo and GIF"]];
+                } else {
+                    TZGifPhotoPreviewController *gifPreviewVc = [[TZGifPhotoPreviewController alloc] init];
+                    gifPreviewVc.model = model;
+                    UIBarButtonItem *backBtnItem = [[UIBarButtonItem alloc] init];
+                    backBtnItem.title = @" ";
+                    self.navigationItem.backBarButtonItem = backBtnItem;
+                    [self.navigationController pushViewController:gifPreviewVc animated:YES];
+                }
+            } else {
+                TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
+                if (imagePickerVc.shouldPick) {
+                    TZAssetModel *asset = _models[index];
+                    TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
+                    [[TZImageManager manager] getOriginalPhotoWithAsset:asset.asset completion:^(UIImage *photo, NSDictionary *info) {
+                        LZImageCropping *imageBrowser = [[LZImageCropping alloc]init];
+                        TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
+                        //设置代理
+                        imageBrowser.delegate = self;
+                        if (tzImagePickerVc.isSquare) {
+                            if (tzImagePickerVc.clipSize.height > 0 && tzImagePickerVc.clipSize.width > 0) {
+                                CGFloat clipR = MIN(tzImagePickerVc.clipSize.height, tzImagePickerVc.clipSize.width);
+                                imageBrowser.cropSize  = CGSizeMake(clipR, clipR);
+                            } else {
+                                
+                                
+                                
+                                imageBrowser.cropSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width - 80, UIScreen.mainScreen.bounds.size.width - 80);
+                            }
+                        } else {
+                            if (tzImagePickerVc.clipSize.height > 0 && tzImagePickerVc.clipSize.width > 0) {
+                                imageBrowser.cropSize  = tzImagePickerVc.clipSize;
+                            } else {
+                                imageBrowser.cropSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.width / 2.0);
+                            }
+                        }
+                        [imageBrowser setImage:photo];
+                        imageBrowser.titleLabel.text = tzImagePickerVc.topTitle;
+                        imageBrowser.backImage = imagePickerVc.backImage;
+                        //设置自定义裁剪区域大小
+                        //是否需要圆形
+                        imageBrowser.isRound = NO;
+                        if (_mainColor) {
+                            imageBrowser.mainColor = _mainColor;
+                        }
+                        [self.navigationController pushViewController:imageBrowser animated:YES];
+                    }];
+                } else {
+                    TZPhotoPreviewController *photoPreviewVc = [[TZPhotoPreviewController alloc] init];
+                    photoPreviewVc.currentIndex = index;
+                    photoPreviewVc.models = _models;
+                    [self pushPhotoPrevireViewController:photoPreviewVc];
+                }
             }
             
+        }
+        
         
         return;
     }
