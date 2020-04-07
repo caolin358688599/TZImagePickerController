@@ -209,6 +209,8 @@
     self.getImageCacheQueue.maxConcurrentOperationCount = 3;
 }
 
+
+
 - (void)creatNavUI {
     self.navigationItem.title = @"封面选择";
 
@@ -248,6 +250,16 @@
     self.editView.validRect = self.editView.bounds;
     self.bottomView.frame = CGRectMake(0, [[UIScreen mainScreen] bounds].size.height - [TSLocalVideoCoverSelectedUX  share].collectionItemHeight - 15 -inset.bottom, [[UIScreen mainScreen] bounds].size.width, [TSLocalVideoCoverSelectedUX  share].collectionItemHeight);
     self.centerImageView.frame = CGRectMake(0, self.navigationController.navigationBar.frame.origin.y + self.navigationController.navigationBar.frame.size.height,[[UIScreen mainScreen] bounds].size.width, self.bottomView.frame.origin.y - ( self.navigationController.navigationBar.frame.origin.y + self.navigationController.navigationBar.frame.size.height));
+//    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//          [UIApplication sharedApplication].statusBarHidden = NO;
+//    });
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    
+    [super viewWillAppear: animated];
+   
+
 }
 
 

@@ -388,9 +388,14 @@
 //    }];
 //
 //    [self presentViewController:imagePickerVc animated:YES completion:nil];
-    TZImagePickerController *vc = [[TZImagePickerController alloc] initWithMaxImagesCount:9 columnNumber:4 delegate:self pushPhotoPickerVc:true mainColor:[UIColor redColor] listImageVideo:YES type:1];
+    TZImagePickerController *vc = [[TZImagePickerController alloc] initWithMaxImagesCount:9 columnNumber:4 delegate:self pushPhotoPickerVc:true mainColor:[UIColor redColor] listImageVideo:YES type:2];
     vc.modalPresentationStyle = UIModalPresentationFullScreen;
     [self presentViewController:vc animated:YES completion:nil];
+//    TZImagePickerController *vc = [[TZImagePickerController alloc] initWithMaxImagesCount:4 columnNumber:4 delegate:self mainColor:[UIColor redColor]];
+//     vc.modalPresentationStyle  = UIModalPresentationFullScreen;
+//    vc.allowTakeVideo = YES;
+//       [self presentViewController:vc animated:YES completion:nil];
+    
     
     
 //    BanmaListViewController *listVC = [[BanmaListViewController alloc] init];

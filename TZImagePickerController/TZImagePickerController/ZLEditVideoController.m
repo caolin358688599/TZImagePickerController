@@ -281,7 +281,10 @@
     [self stopTimer];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     NSLog(@"---- %s", __FUNCTION__);
+    
 }
+
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -374,6 +377,7 @@
             /// 需要选择封面
             if (imagePickerVc.shouldSetCoverImage) {
                 TSLocalVideoCoverSelectedVC *vc = [[TSLocalVideoCoverSelectedVC alloc]init];
+                vc.modalPresentationStyle =   UIModalPresentationFullScreen;
                 if (imagePickerVc.backImage) {
                     vc.backImage = imagePickerVc.backImage;
                 }
@@ -459,16 +463,19 @@
     if (self.editView.validRect.size.width > 0) {
         [self startTimer];
     }
-    self.navigationController.navigationBarHidden = YES;
-    [UIApplication sharedApplication].statusBarHidden = YES;
+    self.navigationController.navigationBarHidden = true;
+    [UIApplication sharedApplication].statusBarHidden = true;
 }
 
 - (void)viewWillDisappear:(BOOL)animated
 {
+    [UIApplication sharedApplication].statusBarHidden = NO;
+     self.navigationController.navigationBarHidden = NO;
     [super viewWillDisappear:animated];
     [self stopTimer];
-    self.navigationController.navigationBarHidden = NO;
-    [UIApplication sharedApplication].statusBarHidden = self.appStatusBarHidden;
+
+//    self.navigationController.navigationBarHidden = NO;
+   //[UIApplication sharedApplication].statusBarHidden = self.appStatusBarHidden;
 }
 
 - (void)viewDidLayoutSubviews

@@ -251,18 +251,25 @@ static CGFloat itemMargin = 5;
             if (self.piccurrentIndexPath) {
                 [self.collectionView scrollToItemAtIndexPath:self.piccurrentIndexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
             }
+              self->_bottomToolBar.hidden = NO;
+            CGRect rect = self.collectionView.frame;
+            rect.size.height -= 50;
+            self.collectionView.frame = rect;
+            self->_models = self.photoArray;
+            [self.collectionView reloadData];
+          
+            
+        } else {
+          
+            self.type = 1;
             self->_bottomToolBar.hidden = YES;
             CGRect rect = self.collectionView.frame;
             rect.size.height += 50;
             self.collectionView.frame = rect;
-            [self.collectionView reloadData];
-        } else {
-            self->_bottomToolBar.hidden = NO;
-            self.type = 1;
            
-            CGRect rect = self.collectionView.frame;
-            rect.size.height -= 50;
-            self.collectionView.frame = rect;
+//            CGRect rect = self.collectionView.frame;
+//            rect.size.height -= 50;
+//            self.collectionView.frame = rect;
             self->_models = self.videoArray;
             if (self.videoIndexPath) {
                 [self.collectionView scrollToItemAtIndexPath:self.videoIndexPath atScrollPosition:UICollectionViewScrollPositionNone animated:NO];
