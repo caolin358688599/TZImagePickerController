@@ -1069,7 +1069,11 @@ static CGFloat itemMargin = 5;
           if (imagePickerVc.shouldPick) {
               TZAssetModel *asset = _models[index];
               TZImagePickerController *imagePickerVc = (TZImagePickerController *)self.navigationController;
-              [[TZImageManager manager] getOriginalPhotoWithAsset:asset.asset completion:^(UIImage *photo, NSDictionary *info) {
+              [[TZImageManager manager] getOriginalPhotoWithAsset:asset.asset completion:^(UIImage *photo, NSDictionary *info, BOOL isDegraded) {
+                  // 模糊的图片不跳转
+                  if (isDegraded == YES) {
+                       return;
+                   }
                   LZImageCropping *imageBrowser = [[LZImageCropping alloc]init];
                   TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
                   //设置代理
@@ -1361,7 +1365,11 @@ static CGFloat itemMargin = 5;
                     } else {
                         asset = _models[0];
                     }
-                    [[TZImageManager manager] getOriginalPhotoWithAsset:asset.asset completion:^(UIImage *photo, NSDictionary *info) {
+                    [[TZImageManager manager] getOriginalPhotoWithAsset:asset.asset completion:^(UIImage *photo, NSDictionary *info, BOOL isDegraded) {
+                        // 模糊的图片不跳转
+                        if (isDegraded == YES) {
+                            return;
+                        }
                         LZImageCropping *imageBrowser = [[LZImageCropping alloc]init];
                         TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
                         //设置代理
