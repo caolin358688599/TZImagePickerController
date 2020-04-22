@@ -417,10 +417,10 @@ static dispatch_once_t onceToken;
 }
 
 /// Get Original Photo / 获取原图
-- (PHImageRequestID)getOriginalPhotoWithAsset:(PHAsset *)asset completion:(void (^)(UIImage *photo,NSDictionary *info))completion {
+- (PHImageRequestID)getOriginalPhotoWithAsset:(PHAsset *)asset completion:(void (^)(UIImage *photo,NSDictionary *info, BOOL isDegraded))completion {
    return [self getOriginalPhotoWithAsset:asset newCompletion:^(UIImage *photo, NSDictionary *info, BOOL isDegraded) {
         if (completion) {
-            completion(photo,info);
+            completion(photo, info, isDegraded);
         }
     }];
 }
